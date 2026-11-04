@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rag-eval-lab"
+version = "0.1.0"
+description = "A small RAG system whose real product is its evaluation harness."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "numpy>=1.26",
+    "scikit-learn>=1.4",
+]
+
+[project.optional-dependencies]
+# Local neural models (MiniLM embedder, cross-encoder reranker). Needed for the full ablation.
+neural = ["sentence-transformers>=3.0"]
+# Live LLM answers and LLM-as-judge. Only used when ANTHROPIC_API_KEY is set.
+live = ["anthropic>=0.40"]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "mypy>=1.10"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+rag_eval_lab = ["static/*.html"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+files = ["src", "evals"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["neural: needs sentence-transformers models (skipped if unavailable)"]
