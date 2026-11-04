@@ -176,7 +176,9 @@ What the numbers say:
 3. ~~Stemming in the tokenizer~~ **Measured, not adopted**: small first-stage gains (+2 to +8,
    all within noise), no change for the served config, and worse refusals (4 to 6 missed). Kept
    as a patch with results: [`evals/experiments/stemming`](evals/experiments/stemming/README.md).
-4. **Reranker depth sweep** (10, 20, 40 candidates) to chart recall@5 against latency.
+4. ~~Reranker depth sweep~~ **Measured**: recall@5 is 75 / 83 / 89 / 87 when reranking 5 / 10 /
+   20 / 40 candidates, at about 150 / 260 / 535 / 1071 ms per query. 20 stays the default; 10 is
+   the latency-friendly option. Report: [`evals/experiments/rerank_depth`](evals/experiments/rerank_depth/README.md).
 5. **Harder unanswerable questions** that use only in-corpus vocabulary, to stress the refusal policy.
 6. **Multi-source gold labels** reviewed by a second annotator, and live-mode results with an
    API key (answers plus LLM-judge faithfulness).
