@@ -1,0 +1,92 @@
+diff --git a/src/rag_eval_lab/text.py b/src/rag_eval_lab/text.py
+index 1b752a4..5f3ec8f 100644
+--- a/src/rag_eval_lab/text.py
++++ b/src/rag_eval_lab/text.py
+@@ -13,8 +13,30 @@ STOPWORDS = frozenset(
+ )
+ 
+ _TOKEN = re.compile(r"[a-z0-9]+")
++_VOWEL = re.compile(r"[aeiouy]")
++
++
++def stem(word: str) -> str:
++    """A deliberately tiny suffix stripper: "requests" -> "request", "failed" -> "fail".
++
++    Not a real stemmer (no Porter rules). It only has to map the same word to the same
++    stem in questions and documents; "status" -> "statu" is harmless because it is
++    applied consistently on both sides.
++    """
++    for suffix in ("ing", "ed"):
++        root = word.removesuffix(suffix)
++        if root != word and len(root) >= 3 and _VOWEL.search(root):
++            # "cancelled" -> "cancell" -> "cancel"; keep "ll"/"ss" words like "fill" intact
++            if len(root) >= 4 and root[-1] == root[-2] and root[-1] not in "aeiouls":
++                root = root[:-1]
++            elif root.endswith("ll") and len(root) > 5:
++                root = root[:-1]
++            return root
++    if word.endswith("s") and not word.endswith(("ss", "us", "is")) and len(word) > 3:
++        return word[:-1]
++    return word
+ 
+ 
+ def tokenize(text: str) -> list[str]:
+-    """Lowercase alphanumeric tokens with stopwords removed."""
+-    return [t for t in _TOKEN.findall(text.lower()) if t not in STOPWORDS]
++    """Lowercase alphanumeric tokens, stopwords removed, light suffix stemming applied."""
++    return [stem(t) for t in _TOKEN.findall(text.lower()) if t not in STOPWORDS]
+diff --git a/tests/test_text.py b/tests/test_text.py
+index ec7ef91..14e5694 100644
+--- a/tests/test_text.py
++++ b/tests/test_text.py
+@@ -1,22 +1,40 @@
+-from rag_eval_lab.text import tokenize
++import pytest
++
++from rag_eval_lab.text import stem, tokenize
+ 
+ 
+ def test_tokenize_lowercases_and_drops_stopwords_and_punctuation() -> None:
+-    assert tokenize("How do I list the Tools? Use tools/list!") == [
+-        "list",
+-        "tools",
+-        "tools",
+-        "list",
+-    ]
++    tokens = tokenize("How do I list the Tools? Use tools/list!")
++    assert tokens == ["list", "tool", "tool", "list"]
+ 
+ 
+ def test_tokenize_keeps_identifiers_and_numbers() -> None:
+     assert tokenize("notifications/cancelled after 30 seconds (HTTP 404)") == [
+-        "notifications",
+-        "cancelled",
++        "notification",
++        "cancel",
+         "after",
+         "30",
+-        "seconds",
++        "second",
+         "http",
+         "404",
+     ]
++
++
++@pytest.mark.parametrize(
++    ("word", "expected"),
++    [
++        ("requests", "request"),
++        ("failed", "fail"),
++        ("cancelled", "cancel"),
++        ("cancel", "cancel"),
++        ("running", "run"),
++        ("stopped", "stop"),
++        ("called", "call"),
++        ("process", "process"),  # "ss" is not a plural
++        ("status", "status"),
++        ("is", "is"),
++        ("bed", "bed"),  # root too short to strip
++    ],
++)
++def test_stem(word: str, expected: str) -> None:
++    assert stem(word) == expected

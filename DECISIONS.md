@@ -71,3 +71,9 @@ Decisions made while building without the owner available. Format: decision, alt
 - Why: its gain over the current default is +4 points with a 95% interval of +0 to +10 on 50
   questions, which is borderline. The fixed-chunk effect is consistent and mechanistically
   plausible, so it is the first change to re-test on a larger gold set.
+
+## D14. Stemming measured and rejected; kept as a patch, not as dead code
+- Alternatives: adopt it; keep it behind a tokenizer flag.
+- Why: no recall change for the served config, worse refusal behaviour, mixed effects on reranked
+  configs. A flag threaded through every tokenizer caller would be unused complexity, so the change
+  lives in `evals/experiments/stemming/stemming.patch` with its results and write-up.

@@ -173,8 +173,9 @@ What the numbers say:
    lifts every fixed-size config (+2 to +10 points recall@5; `fixed+ctx/hybrid+rerank` reaches 93%)
    and leaves heading-aware chunks unchanged. Not yet promoted because the gain for the served
    config is borderline. Report: [`evals/experiments/contextual_headers`](evals/experiments/contextual_headers/README.md).
-3. **Stemming in the tokenizer**, then re-measure BM25 recall and the refusal sweep, since both
-   depend on exact word matches.
+3. ~~Stemming in the tokenizer~~ **Measured, not adopted**: small first-stage gains (+2 to +8,
+   all within noise), no change for the served config, and worse refusals (4 to 6 missed). Kept
+   as a patch with results: [`evals/experiments/stemming`](evals/experiments/stemming/README.md).
 4. **Reranker depth sweep** (10, 20, 40 candidates) to chart recall@5 against latency.
 5. **Harder unanswerable questions** that use only in-corpus vocabulary, to stress the refusal policy.
 6. **Multi-source gold labels** reviewed by a second annotator, and live-mode results with an
