@@ -3,7 +3,7 @@
 Each milestone: tests first, simplest implementation, all checks green, commit, push, tick here.
 Success criteria for each milestone are in SPEC.md.
 
-- [ ] M0 Scaffold: package layout, pyproject, ruff, mypy, pytest, CI workflow, Dockerfile, .env.example, LICENSE
+- [x] M0 Scaffold: package layout, pyproject, ruff, mypy, pytest, CI workflow, Dockerfile, .env.example, LICENSE
 - [ ] M1 Corpus snapshot + MDX cleaning + fixed-size and heading-aware chunkers
 - [ ] M2 Retrievers: BM25, dense (LSA + MiniLM), hybrid RRF, cross-encoder reranker
 - [ ] M3 LLM provider interface (Mock + Anthropic), grounded answering, refusal
