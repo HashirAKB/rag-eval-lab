@@ -36,7 +36,8 @@ chunk that overlaps it). This keeps one gold file valid for every chunking strat
   the same question elsewhere too (the MCP docs repeat themselves, for example between the
   `learn/` pages and the specification), a retriever that finds the other passage is scored as a
   miss. Recall numbers are therefore a lower bound.
-- **Unanswerable items are easy.** Most contain a word that never appears in the corpus
-  ("Kubernetes", "gRPC"), which is exactly what the refusal heuristic keys on. Harder negatives
-  (on-topic questions whose specific answer is absent) would lower refusal accuracy.
+- **Few, mixed-difficulty negatives.** Some unanswerable items contain a word that never appears
+  in the corpus ("Kubernetes", "Helm"), which is exactly what the refusal heuristic keys on; others
+  use only corpus vocabulary ("Which Python web framework does the specification require?") and
+  are routinely missed. Ten negatives are too few to estimate refusal accuracy precisely.
 - **No human review.** No MCP maintainer checked the questions or the chosen evidence.

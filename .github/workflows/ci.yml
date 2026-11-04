@@ -40,3 +40,16 @@ jobs:
 
       - name: Tests
         run: pytest -q
+
+      - name: Evals (mock mode)
+        run: python -m evals.run_eval --output-dir eval-output
+
+      - name: Regression gate (recall@5 within 3 points of baseline)
+        run: python -m evals.check_regression --results eval-output/results.json
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: eval-output/

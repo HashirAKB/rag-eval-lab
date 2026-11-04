@@ -44,4 +44,5 @@ files = ["src", "evals"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]  # lets tests import the `evals` package
 markers = ["neural: needs sentence-transformers models (skipped if unavailable)"]

@@ -1,0 +1,18 @@
+{
+  "fixed/bm25": 0.77,
+  "fixed/bm25+rerank": 0.83,
+  "fixed/dense-lsa": 0.71,
+  "fixed/dense-lsa+rerank": 0.83,
+  "fixed/dense-minilm": 0.69,
+  "fixed/dense-minilm+rerank": 0.81,
+  "fixed/hybrid": 0.75,
+  "fixed/hybrid+rerank": 0.89,
+  "heading/bm25": 0.77,
+  "heading/bm25+rerank": 0.87,
+  "heading/dense-lsa": 0.73,
+  "heading/dense-lsa+rerank": 0.89,
+  "heading/dense-minilm": 0.73,
+  "heading/dense-minilm+rerank": 0.79,
+  "heading/hybrid": 0.79,
+  "heading/hybrid+rerank": 0.85
+}

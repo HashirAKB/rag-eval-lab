@@ -8,9 +8,12 @@
     "refused": false
   },
   "How should a server report that a tool call failed?": {
-    "text": "Not in the docs: I could not find this in the MCP documentation.",
-    "citations": [],
-    "refused": true
+    "text": "MCP has no protocol-level session, so a server cannot rely on implicit per-connection state to relate one tool call to the next. [specification/server/tools#h025] The server should validate the caller's authorization against the handle on every call. [specification/server/tools#h026]",
+    "citations": [
+      "specification/server/tools#h025",
+      "specification/server/tools#h026"
+    ],
+    "refused": false
   },
   "What is the airspeed velocity of an unladen swallow?": {
     "text": "Not in the docs: I could not find this in the MCP documentation.",

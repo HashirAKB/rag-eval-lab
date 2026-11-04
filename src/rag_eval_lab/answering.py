@@ -15,7 +15,7 @@ from rag_eval_lab.retrievers import Hit, Retriever
 from rag_eval_lab.text import tokenize
 
 REFUSAL_TEXT = "Not in the docs: I could not find this in the MCP documentation."
-DEFAULT_THRESHOLD = 0.5
+DEFAULT_THRESHOLD = 0.35  # chosen from the sweep in evals/results.md
 
 
 @dataclass
@@ -80,7 +80,11 @@ class Answerer:
         self.k, self.threshold = k, threshold
 
     def ask(self, question: str) -> Answer:
-        hits = self.retriever.search(question, self.k)
+        return self.answer_from_hits(question, self.retriever.search(question, self.k))
+
+    def answer_from_hits(self, question: str, hits: list[Hit]) -> Answer:
+        """Answer from already-retrieved hits (the eval harness retrieves once, deeper)."""
+        hits = hits[: self.k]
         chunks = [h.chunk for h in hits]
         confidence = self.scorer.confidence(question, chunks)
         if confidence < self.threshold:

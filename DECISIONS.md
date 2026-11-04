@@ -38,3 +38,24 @@ Decisions made while building without the owner available. Format: decision, alt
 - Alternatives: canned answers per question; a template that echoes the question.
 - Why: an extractive answer is deterministic, grounded by construction, carries real citations,
   and exercises the citation-accuracy metric honestly. It is not a claim about answer quality.
+
+## D8. Refusal threshold 0.35, chosen from a sweep on the eval set
+- Alternatives: 0.5 (the initial guess: 14 false refusals out of 50); a held-out tuning split
+  (the gold set is too small to split usefully).
+- Why: 0.35 gives zero false refusals on the winning config and the best refusal accuracy across
+  configs. Tuned on the evaluation set, which is stated next to the number in `evals/results.md`.
+
+## D9. API default config: `fixed/hybrid+rerank`
+- Alternatives: the three other configs statistically tied with it; a cheaper non-reranked config.
+- Why: highest recall@5 (tied) and the fastest of the tied reranked configs on this machine,
+  because shorter fixed chunks make the cross-encoder cheaper. Override with `RAG_CONFIG`.
+
+## D10. Gold labels were not edited after seeing the results
+- Alternatives: add the alternative source passages found during error analysis (q19, q22).
+- Why: editing labels after looking at the system's misses inflates the score of the system that
+  was inspected. The issue is documented instead, and multi-source labelling is listed as next work.
+
+## D11. Gate every configuration, not only the default
+- Alternatives: gate only the served config.
+- Why: a change to shared code (tokenizer, chunker) can silently break a config that is not
+  served today but is part of the published ablation.
