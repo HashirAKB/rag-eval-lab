@@ -7,6 +7,7 @@ only corpus vocabulary (the hard case for the IDF-coverage heuristic).
 Usage: python -m evals.holdout_eval   (writes evals/experiments/holdout/README.md)
 """
 
+import json
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from rag_eval_lab.pipeline import DEFAULT_CONFIG, Config
 EVALS_DIR = Path(__file__).resolve().parent
 HOLDOUT_PATH = EVALS_DIR / "holdout.jsonl"
 OUTPUT = EVALS_DIR / "experiments" / "holdout" / "README.md"
+RESULTS = OUTPUT.parent / "results.json"
 CONFIGS = [DEFAULT_CONFIG, Config("fixed", "bm25"), Config("heading", "bm25")]
 
 
@@ -63,7 +65,10 @@ def render(results: dict[str, Any]) -> str:
 def main() -> None:
     results = run(CONFIGS, MockProvider(), gold=load_gold(HOLDOUT_PATH))
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text(render(results))
+    RESULTS.write_text(json.dumps(results, indent=1) + "\n")
+    # Keep the hand-written findings below the generated tables.
+    findings = OUTPUT.read_text().partition("\n## Findings")[2] if OUTPUT.exists() else ""
+    OUTPUT.write_text(render(results) + ("\n## Findings" + findings if findings else ""))
     print(render(results))
 
 

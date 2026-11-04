@@ -6,9 +6,11 @@ evaluated is exactly what is served.
 
 from dataclasses import dataclass
 
+from rag_eval_lab.answering import Answerer, ConfidenceScorer
 from rag_eval_lab.chunking import STRATEGIES, Chunk, chunk_corpus, contextual_text
 from rag_eval_lab.corpus import load_corpus
 from rag_eval_lab.embedders import LsaEmbedder, MiniLmEmbedder
+from rag_eval_lab.llm import LLMProvider
 from rag_eval_lab.retrievers import (
     Bm25Retriever,
     DenseRetriever,
@@ -65,6 +67,11 @@ EXPERIMENT_CONFIGS = [
     for rerank in (False, True)
 ]
 
+# Reranked configs also refuse when the cross-encoder's best score is below this logit.
+# Chosen on the main gold set, validated on the held-out set:
+# evals/experiments/refusal_signals.
+RERANK_MIN_SCORE = 0.25
+
 # Served by the API unless RAG_CONFIG says otherwise; chosen from the ablation results.
 DEFAULT_CONFIG = Config("fixed", "hybrid", rerank=True)
 
@@ -108,3 +115,15 @@ def build_pipeline(config: Config) -> tuple[list[Chunk], Retriever]:
     """Chunks and retriever for one configuration (used by the API)."""
     chunks = chunk_corpus(load_corpus(), config.chunking)
     return chunks, build_retrievers(chunks, [config])[config]
+
+
+def build_answerer(
+    config: Config,
+    retriever: Retriever,
+    provider: LLMProvider,
+    scorer: ConfidenceScorer,
+    k: int = 5,
+) -> Answerer:
+    """The answerer for a config: reranked configs get the extra cross-encoder refusal gate."""
+    min_top_score = RERANK_MIN_SCORE if config.rerank else None
+    return Answerer(retriever, provider, scorer, k=k, min_top_score=min_top_score)

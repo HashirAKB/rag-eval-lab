@@ -26,3 +26,11 @@ chosen from the sweep in `evals/results.md`). A live LLM can additionally refuse
   whose specific answer is missing still pass. The eval shows this: 4 of 10 unanswerable questions
   are answered by the winning config.
 - The threshold was tuned on the eval set, which the results state explicitly.
+
+## Amendment (2026-11-04): add the cross-encoder score for reranked configs
+
+A held-out set of on-topic unanswerable questions showed that word coverage measures topicality,
+not answerability: refusal accuracy for the served config fell from 93% (tuning set) to 55%.
+Reranked configs now also refuse when the cross-encoder's top score is below 0.25 (a logit chosen
+on the main set). Held-out refusal accuracy rose to 75%. Non-reranked configs keep the coverage
+rule. Evidence: `evals/experiments/holdout`, `evals/experiments/refusal_signals`.

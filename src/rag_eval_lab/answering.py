@@ -1,8 +1,14 @@
 """Grounded answering: retrieve, decide whether to answer at all, then generate with citations.
 
-The refusal decision is made *before* calling the LLM, from a retriever-independent
-confidence signal, so it behaves identically in mock and live mode. A live LLM can
-additionally refuse by returning NOT_IN_DOCS.
+The refusal decision is made *before* calling the LLM, so it behaves identically in mock
+and live mode. Two signals can trigger it:
+
+* word coverage (ConfidenceScorer), available for every retriever, which measures whether
+  the docs talk about the question's topic;
+* the cross-encoder's top score, available only for reranked retrievers, which reads the
+  question and passage together and so says more about whether the passage answers it.
+
+A live LLM can additionally refuse by returning NOT_IN_DOCS.
 """
 
 import math
@@ -75,9 +81,12 @@ class Answerer:
         scorer: ConfidenceScorer,
         k: int = 5,
         threshold: float = DEFAULT_THRESHOLD,
+        min_top_score: float | None = None,
     ) -> None:
         self.retriever, self.provider, self.scorer = retriever, provider, scorer
         self.k, self.threshold = k, threshold
+        # Only meaningful when hit scores are cross-encoder logits (reranked retrievers).
+        self.min_top_score = min_top_score
 
     def ask(self, question: str) -> Answer:
         return self.answer_from_hits(question, self.retriever.search(question, self.k))
@@ -87,7 +96,10 @@ class Answerer:
         hits = hits[: self.k]
         chunks = [h.chunk for h in hits]
         confidence = self.scorer.confidence(question, chunks)
-        if confidence < self.threshold:
+        weak_passage = self.min_top_score is not None and (
+            not hits or hits[0].score < self.min_top_score
+        )
+        if confidence < self.threshold or weak_passage:
             return Answer(question, REFUSAL_TEXT, [], True, confidence, hits)
 
         text = self.provider.answer(question, chunks)

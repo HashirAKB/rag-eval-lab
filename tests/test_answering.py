@@ -180,3 +180,30 @@ def test_anthropic_refusal_stop_reason_becomes_not_in_docs(
 ) -> None:
     provider = _fake_anthropic(monkeypatch, _FakeMessages("", stop_reason="refusal"))
     assert provider.answer("anything", toy_chunks) == NOT_IN_DOCS
+
+
+def test_answerer_refuses_when_the_top_passage_scores_below_the_reranker_gate(
+    toy_chunks: list[Chunk],
+) -> None:
+    from rag_eval_lab.retrievers import Hit
+
+    answerer = Answerer(
+        Bm25Retriever(toy_chunks), MockProvider(), ConfidenceScorer(toy_chunks), min_top_score=0.5
+    )
+    question = "What does the stdio transport launch as a subprocess?"
+    weak = answerer.answer_from_hits(question, [Hit(toy_chunks[3], 0.1)])
+    strong = answerer.answer_from_hits(question, [Hit(toy_chunks[3], 2.0)])
+    assert weak.refused and not strong.refused
+    assert weak.confidence == strong.confidence  # coverage alone would have answered
+
+
+def test_build_answerer_adds_the_gate_only_for_reranked_configs(toy_chunks: list[Chunk]) -> None:
+    from rag_eval_lab.pipeline import RERANK_MIN_SCORE, Config, build_answerer
+
+    scorer, retriever = ConfidenceScorer(toy_chunks), Bm25Retriever(toy_chunks)
+    plain = build_answerer(Config("fixed", "bm25"), retriever, MockProvider(), scorer)
+    reranked = build_answerer(
+        Config("fixed", "bm25", rerank=True), retriever, MockProvider(), scorer
+    )
+    assert plain.min_top_score is None
+    assert reranked.min_top_score == RERANK_MIN_SCORE

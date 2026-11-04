@@ -77,3 +77,14 @@ Decisions made while building without the owner available. Format: decision, alt
 - Why: no recall change for the served config, worse refusal behaviour, mixed effects on reranked
   configs. A flag threaded through every tokenizer caller would be unused complexity, so the change
   lives in `evals/experiments/stemming/stemming.patch` with its results and write-up.
+
+## D15. Held-out set kept separate from the main gold set
+- Alternatives: add the hard negatives to `gold.jsonl`.
+- Why: the refusal threshold was tuned on the main set, so it needed a set it had never seen;
+  merging would also have changed every committed number and the baseline.
+
+## D16. Reranked configs refuse on low coverage or a low cross-encoder score
+- Alternatives: keep coverage only; use the cross-encoder score alone.
+- Why: on held-out questions the cross-encoder signal generalised (75% vs 55%); "either" matched
+  that and was best in-sample. The threshold (0.25) was chosen on the main set only. Recorded
+  openly: the decision to try this signal came from looking at held-out failures.

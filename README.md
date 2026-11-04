@@ -82,7 +82,7 @@ provider, hit list shortened to ids and reranker scores):
 }
 ```
 
-An out-of-scope question is refused before any LLM call:
+An out-of-scope question is refused before any LLM call (word coverage 0.33 is below 0.35):
 
 ```json
 {"question": "How do I deploy an MCP server on Kubernetes with Helm?",
@@ -93,27 +93,28 @@ An out-of-scope question is refused before any LLM call:
 ## Eval results
 
 Mock mode, 50 answerable + 10 unanswerable questions. R@5 is recall@5 in percent with a 95%
-bootstrap interval; latency is retrieval time per query on the build machine's CPU. Full table,
+bootstrap interval; latency is retrieval time per query on the build machine's CPU. Reranked
+configs refuse on low word coverage *or* a low cross-encoder score; the others on coverage only. Full table,
 paired comparisons, threshold sweep and analysis: [`evals/results.md`](evals/results.md).
 
 | Config | R@5 (95% CI) | MRR | nDCG@10 | Citation acc | Refusal acc | ms/query |
 | --- | --- | --- | --- | --- | --- | --- |
-| fixed/hybrid+rerank | 89 (80 to 97) | 64.8 | 71.1 | 38.0 | 93.3 | 542 |
-| heading/dense-lsa+rerank | 89 (80 to 96) | 65.2 | 72.2 | 37.5 | 88.3 | 988 |
-| heading/bm25+rerank | 87 (77 to 96) | 64.7 | 70.9 | 35.4 | 88.3 | 1011 |
-| heading/hybrid+rerank | 85 (75 to 94) | 65.2 | 72.6 | 41.7 | 90.0 | 964 |
-| fixed/bm25+rerank | 83 (73 to 93) | 63.9 | 69.9 | 36.0 | 93.3 | 545 |
-| fixed/dense-lsa+rerank | 83 (73 to 93) | 64.6 | 70.9 | 38.0 | 93.3 | 533 |
-| fixed/dense-minilm+rerank | 81 (70 to 91) | 58.4 | 64.3 | 37.5 | 93.3 | 515 |
-| heading/dense-minilm+rerank | 79 (67 to 89) | 60.7 | 66.7 | 37.2 | 91.7 | 973 |
-| heading/hybrid | 79 (67 to 90) | 59.4 | 65.4 | 34.0 | 90.0 | 14 |
+| fixed/hybrid+rerank | 89 (80 to 97) | 64.8 | 71.1 | 38.0 | 96.7 | 613 |
+| heading/dense-lsa+rerank | 89 (80 to 96) | 65.2 | 72.2 | 37.5 | 93.3 | 991 |
+| heading/bm25+rerank | 87 (77 to 96) | 64.7 | 70.9 | 35.4 | 93.3 | 987 |
+| heading/hybrid+rerank | 85 (75 to 94) | 65.2 | 72.6 | 41.7 | 93.3 | 1082 |
+| fixed/bm25+rerank | 83 (73 to 93) | 63.9 | 69.9 | 36.0 | 96.7 | 694 |
+| fixed/dense-lsa+rerank | 83 (73 to 93) | 64.6 | 70.9 | 38.0 | 96.7 | 638 |
+| fixed/dense-minilm+rerank | 81 (70 to 91) | 58.4 | 64.3 | 37.5 | 95.0 | 601 |
+| heading/dense-minilm+rerank | 79 (67 to 89) | 60.7 | 66.7 | 37.2 | 93.3 | 1004 |
+| heading/hybrid | 79 (67 to 90) | 59.4 | 65.4 | 34.0 | 90.0 | 17 |
 | fixed/bm25 | 77 (65 to 88) | 60.0 | 65.6 | 35.0 | 90.0 | 1 |
 | heading/bm25 | 77 (65 to 88) | 57.3 | 63.3 | 34.7 | 88.3 | 1 |
-| fixed/hybrid | 75 (63 to 86) | 57.0 | 62.7 | 34.4 | 90.0 | 14 |
-| heading/dense-lsa | 73 (61 to 85) | 52.4 | 61.3 | 33.3 | 86.7 | 2 |
-| heading/dense-minilm | 73 (61 to 85) | 57.6 | 63.3 | 44.4 | 88.3 | 13 |
-| fixed/dense-lsa | 71 (58 to 83) | 52.8 | 59.4 | 37.2 | 85.0 | 2 |
-| fixed/dense-minilm | 69 (56 to 81) | 45.8 | 51.2 | 33.3 | 83.3 | 12 |
+| fixed/hybrid | 75 (63 to 86) | 57.0 | 62.7 | 34.4 | 90.0 | 15 |
+| heading/dense-lsa | 73 (61 to 85) | 52.4 | 61.3 | 33.3 | 86.7 | 4 |
+| heading/dense-minilm | 73 (61 to 85) | 57.6 | 63.3 | 44.4 | 88.3 | 15 |
+| fixed/dense-lsa | 71 (58 to 83) | 52.8 | 59.4 | 37.2 | 85.0 | 3 |
+| fixed/dense-minilm | 69 (56 to 81) | 45.8 | 51.2 | 33.3 | 83.3 | 31 |
 
 What the numbers say:
 
@@ -137,8 +138,10 @@ What the numbers say:
   About 800 chunks need no approximate index; evaluation is not blurred by ANN recall loss.
 - **A provider interface with a deterministic mock as the default** ([ADR 0003](docs/adr/0003-provider-interface-with-deterministic-mock.md)).
   Offline, reproducible CI; the price is that answer-quality numbers are only meaningful in live mode.
-- **Refuse before generation from IDF-weighted term coverage** ([ADR 0004](docs/adr/0004-refuse-before-generation.md)).
-  Retriever-independent and cheap, but blind to paraphrase and to on-topic unanswerable questions.
+- **Refuse before generation** ([ADR 0004](docs/adr/0004-refuse-before-generation.md)), from
+  IDF-weighted word coverage plus, for reranked configs, the cross-encoder's top score. Cheap and
+  testable offline; coverage alone is blind to on-topic unanswerable questions, which is why the
+  reranker signal was added.
 - **Serve hybrid + rerank, gate every config in CI** ([ADR 0005](docs/adr/0005-rerank-and-gate-every-config.md)).
   The reranker costs about half a second per query on a CPU; a 3-point tolerance absorbs model
   jitter but still catches a 2-question regression.
@@ -153,10 +156,12 @@ What the numbers say:
   [`evals/GOLD.md`](evals/GOLD.md).
 - **Single-source labels.** When another page also answers a question, a correct retrieval counts
   as a miss (2 of the winner's 6 misses are this).
-- **Refusal does not generalise to hard negatives.** The threshold was tuned on the eval set (93%
-  refusal accuracy there). On a held-out set of on-topic unanswerable questions it misses 8 of 10
-  (55% refusal accuracy): word coverage measures topicality, not answerability. See
-  [`evals/experiments/holdout`](evals/experiments/holdout/README.md).
+- **Refusals are in-sample optimistic.** The served config reaches 96.7% refusal accuracy on the
+  set its thresholds were tuned on, but 75% on 20 held-out questions with on-topic unanswerable
+  items (it misses 3 of 10 and falsely refuses 2 of 10). Word coverage alone scored 55% there;
+  adding the cross-encoder score fixed part of that. The held-out set has now informed one design
+  decision, so a fresh set is needed for the next unbiased estimate. See
+  [`evals/experiments/refusal_signals`](evals/experiments/refusal_signals/README.md).
 - **No live-mode results.** No API key was available while building, so answer quality and LLM-judge
   faithfulness were never measured live; the live path is covered by unit tests with a fake client.
 - **MiniLM truncates** inputs at 256 word pieces, so the longest heading-aware chunks (up to 1500
@@ -182,10 +187,13 @@ What the numbers say:
    20 / 40 candidates, at about 150 / 260 / 535 / 1071 ms per query. 20 stays the default; 10 is
    the latency-friendly option. Report: [`evals/experiments/rerank_depth`](evals/experiments/rerank_depth/README.md).
 5. ~~Harder unanswerable questions~~ **Done as a held-out set** (`evals/holdout.jsonl`, 10
-   answerable + 10 on-topic unanswerable, never used for tuning). Result: refusal accuracy drops
-   from 93% to 55% for the served config, which exposes the main weakness of the refusal heuristic.
+   answerable + 10 on-topic unanswerable, never used for tuning). Result: with word coverage
+   alone, refusal accuracy drops from 93% to 55% for the served config, which exposed the main
+   weakness of the refusal heuristic and motivated item 6.
    Report: [`evals/experiments/holdout`](evals/experiments/holdout/README.md).
-6. **An answerability signal that reads the passage**, such as the cross-encoder's top score, to
-   replace or complement word coverage for refusals, measured on the held-out set.
+6. ~~An answerability signal that reads the passage~~ **Done**: reranked configs also refuse when
+   the cross-encoder's top score is below 0.25 (chosen on the main set). Held-out refusal accuracy
+   for the served config rose from 55% to 75%; main-set accuracy from 93.3% to 96.7%. Report:
+   [`evals/experiments/refusal_signals`](evals/experiments/refusal_signals/README.md).
 7. **Multi-source gold labels** reviewed by a second annotator, and live-mode results with an
    API key (answers plus LLM-judge faithfulness).

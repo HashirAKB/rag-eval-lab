@@ -13,9 +13,9 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
-from rag_eval_lab.answering import Answerer, ConfidenceScorer
+from rag_eval_lab.answering import ConfidenceScorer
 from rag_eval_lab.llm import get_provider
-from rag_eval_lab.pipeline import DEFAULT_CONFIG, Config, build_pipeline
+from rag_eval_lab.pipeline import DEFAULT_CONFIG, Config, build_answerer, build_pipeline
 from rag_eval_lab.retrievers import Hit
 
 
@@ -66,7 +66,8 @@ def create_app(config: Config | None = None) -> FastAPI:
         provider = get_provider()
         app.state.retriever = retriever
         app.state.provider = provider
-        app.state.answerer = Answerer(retriever, provider, ConfidenceScorer(chunks))
+        scorer = ConfidenceScorer(chunks)
+        app.state.answerer = build_answerer(config, retriever, provider, scorer)
         yield
 
     app = FastAPI(title="RAG Eval Lab", lifespan=lifespan)

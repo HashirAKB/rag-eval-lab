@@ -39,13 +39,14 @@
 - The gold set was written by the builder from the documents (lexical bias), is small (one
   question is 2 points of recall) and has one labelled source per question, so recall is a lower
   bound. No human domain expert reviewed it.
-- The refusal threshold (0.35) was tuned on the evaluation set (93% refusal accuracy there). On a
-  held-out set of on-topic unanswerable questions it misses 8 of 10 (55%): the heuristic measures
-  topicality, not answerability.
+- Refusal thresholds were tuned on the evaluation set (96.7% refusal accuracy there for the
+  served config). On 20 held-out questions it is 75%; word coverage alone scored 55% there,
+  because it measures topicality, not answerability. The held-out set has since informed a design
+  change, so it is no longer an unbiased test.
 - No live-mode numbers exist for answer quality or faithfulness.
 - The Docker image was not built locally (Docker Hub rate limit); CI builds and smoke-tests it.
-- Embeddings are recomputed at every startup; reranking costs about 0.5 to 1 second per query on
-  a CPU.
+- Reranking costs about 0.5 to 1 second per query on a CPU (MiniLM corpus embeddings are cached
+  on disk, so startup takes about a second once warm).
 
 ## Resume bullets (honest claims)
 

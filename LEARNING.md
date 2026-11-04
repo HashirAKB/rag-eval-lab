@@ -137,9 +137,11 @@ with the default config `fixed/hybrid+rerank`.
    returns its top 50; `reciprocal_rank_fusion` merges the two id lists.
 4. **Rerank** (`RerankingRetriever.search`): the top 20 fused chunks are scored by the
    cross-encoder as (question, chunk) pairs and re-sorted. The top 5 are kept.
-5. **Confidence** (`ConfidenceScorer.confidence`): rare words like "stdio" and "cancel" carry most
-   of the IDF weight; the best chunk contains all of them, so confidence is about 0.85, above the
-   0.35 threshold, and the answerer proceeds.
+5. **Refusal check** (`Answerer.answer_from_hits`, built by `pipeline.build_answerer`): rare words
+   like "stdio" and "cancel" carry most of the IDF weight and the best chunk contains all of them,
+   so word coverage (`ConfidenceScorer.confidence`) is about 0.85, above 0.35. Because this config
+   is reranked, the top cross-encoder score (8.38) must also clear 0.25. Both pass, so the answerer
+   proceeds.
 6. **Generate** (`MockProvider.answer`): the mock splits each chunk into prose sentences (skipping
    code, headings, tables and link definitions), ranks them by word overlap with the question, and
    returns the best two, each followed by its `[chunk_id]`. With a key, `AnthropicProvider.answer`
@@ -187,14 +189,19 @@ answer the API would give.
    latency bottleneck (about 0.5 to 1 s per query on CPU), so depth is a recall vs latency knob.
 
 7. **How is the refusal decision made, and what are its failure modes?**
-   `ConfidenceScorer`: the IDF-weighted share of question words present in the best of the top 5
-   chunks, thresholded at 0.35. It fails on paraphrases (no stemming, so false refusals) and,
-   badly, on on-topic unanswerable questions that use only corpus vocabulary: on the held-out set
-   it misses 8 of 10 (`evals/experiments/holdout`). It measures topicality, not answerability.
+   Two signals, checked before generation. `ConfidenceScorer`: the IDF-weighted share of question
+   words present in the best of the top 5 chunks, thresholded at 0.35. It measures topicality, not
+   answerability: on held-out on-topic unanswerable questions it missed 8 of 10. So reranked configs
+   also refuse when the cross-encoder's top score is below 0.25, which lifted held-out refusal
+   accuracy from 55% to 75% (`evals/experiments/refusal_signals`). Remaining failures: paraphrases
+   (false refusals) and negatives the cross-encoder still finds plausible.
 
-8. **Why decide refusal before calling the LLM?**
-   It is retriever-independent, testable offline, identical in mock and live mode, and saves a
-   call. The LLM can still refuse afterwards, and answers without valid citations are refused.
+8. **Why decide refusal before calling the LLM, and how did you validate the thresholds?**
+   It is testable offline, identical in mock and live mode, and saves a call; the LLM can still
+   refuse afterwards, and answers without valid citations are refused. Thresholds were chosen on
+   the main set, then checked on a held-out set: 96.7% in-sample vs 75% held-out shows how
+   optimistic in-sample refusal numbers are. That held-out set then influenced a design change, so
+   it is no longer unbiased; I would write a fresh one before claiming a new number.
 
 9. **How would you measure faithfulness, and why is the mock number 100%?**
    Live: an LLM judge with a JSON schema output (`AnthropicProvider.faithfulness`) scores support of
