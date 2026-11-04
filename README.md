@@ -168,8 +168,8 @@ What the numbers say:
   characters) are partly ignored by the dense retriever.
 - **CPU latency.** Reranking takes about 0.5 to 1 second per query. BM25 and LSA indexes are
   rebuilt at startup; MiniLM corpus embeddings are cached on disk (`.cache/embeddings`).
-- The Docker image is built in CI; it could not be built locally because Docker Hub rate-limited
-  the build machine.
+- The Docker image is built and smoke-tested in CI; it could not be built in the sandbox where this
+  was developed (registry rate limit, then a TLS-intercepting proxy inside the build).
 
 ## What I'd do next
 

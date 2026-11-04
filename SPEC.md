@@ -141,8 +141,9 @@ have no evidence and `answerable: false`.
   tests. No live Anthropic recordings exist because no API key was available
   while building.
 - The Docker image could not be built inside the build sandbox: Docker Hub answered
-  `429 Too Many Requests` for `python:3.11-slim`. Per the project rules no alternative registry
-  was tried. Instead, CI has a `docker` job that builds the image and smoke-tests `/search`
-  inside the container on GitHub's runners.
+  `429 Too Many Requests` for `python:3.11-slim`. A single later retry pulled the base image, but
+  `pip` inside the build then failed TLS verification behind the sandbox's intercepting proxy.
+  Per the project rules no workaround route was tried. Instead, CI has a `docker` job that builds
+  the image and smoke-tests `/search` inside the container on GitHub's runners (passing).
 - M3's live provider is covered by unit tests with a fake client; no live API call was made
   because no API key was available.

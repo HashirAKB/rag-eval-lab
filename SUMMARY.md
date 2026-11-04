@@ -51,7 +51,8 @@
   because it measures topicality, not answerability. The held-out set has since informed a design
   change, so it is no longer an unbiased test.
 - No live-mode numbers exist for answer quality or faithfulness.
-- The Docker image was not built locally (Docker Hub rate limit); CI builds and smoke-tests it.
+- The Docker image was not built in the development sandbox (registry rate limit, then a
+  TLS-intercepting proxy); the CI `docker` job builds it and smoke-tests `/search`.
 - Reranking costs about 0.5 to 1 second per query on a CPU (MiniLM corpus embeddings are cached
   on disk, so startup takes about a second once warm).
 
