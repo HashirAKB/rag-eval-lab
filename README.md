@@ -195,5 +195,10 @@ What the numbers say:
    the cross-encoder's top score is below 0.25 (chosen on the main set). Held-out refusal accuracy
    for the served config rose from 55% to 75%; main-set accuracy from 93.3% to 96.7%. Report:
    [`evals/experiments/refusal_signals`](evals/experiments/refusal_signals/README.md).
-7. **Multi-source gold labels** reviewed by a second annotator, and live-mode results with an
-   API key (answers plus LLM-judge faithfulness).
+7. **Multi-source gold labels**: *started*. `python -m evals.label_review_queue` lists, per
+   question, the chunks from other documents that the served config ranks above the labelled
+   source (41 candidates across 16 questions, in [`evals/label_review_queue.md`](evals/label_review_queue.md)).
+   Accepting them needs a human annotator plus a second reviewer; the script deliberately never
+   edits `gold.jsonl`.
+8. **Live-mode results**: run the eval with `ANTHROPIC_API_KEY` set to measure real answer quality
+   and LLM-judge faithfulness, and record a few live answers as replay fixtures.
