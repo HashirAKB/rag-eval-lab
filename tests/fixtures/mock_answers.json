@@ -1,0 +1,20 @@
+{
+  "What does a client send to cancel an in-progress request?": {
+    "text": "When a client wants to cancel an in-progress request, it sends a `notifications/cancelled` notification containing: - The ID of the request to cancel - An optional reason string that can be logged or displayed [specification/basic/patterns/cancellation#h001] Servers receiving a request with a progress token **MAY**: - Choose not to send any progress notifications - Send notifications at whatever frequency they deem appropriate - Omit the total value if unknown [specification/basic/patterns/progress#h002]",
+    "citations": [
+      "specification/basic/patterns/cancellation#h001",
+      "specification/basic/patterns/progress#h002"
+    ],
+    "refused": false
+  },
+  "How should a server report that a tool call failed?": {
+    "text": "Not in the docs: I could not find this in the MCP documentation.",
+    "citations": [],
+    "refused": true
+  },
+  "What is the airspeed velocity of an unladen swallow?": {
+    "text": "Not in the docs: I could not find this in the MCP documentation.",
+    "citations": [],
+    "refused": true
+  }
+}
