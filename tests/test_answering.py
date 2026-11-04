@@ -21,8 +21,9 @@ FIXTURE = Path(__file__).parent / "fixtures" / "mock_answers.json"
 
 
 def test_extract_citations_keeps_only_known_ids_in_order() -> None:
-    text = "A [doc#h001]. B [doc#h002][doc#h001]. C [made-up#h999]."
-    assert extract_citations(text, {"doc#h001", "doc#h002"}) == ["doc#h001", "doc#h002"]
+    text = "A [doc#h001]. B [doc#h002][doc#h001]. C [made-up#h999]. D [doc#f1234]."
+    allowed = {"doc#h001", "doc#h002", "doc#f1234"}
+    assert extract_citations(text, allowed) == ["doc#h001", "doc#h002", "doc#f1234"]
 
 
 def test_confidence_is_idf_weighted_coverage_of_best_chunk(toy_chunks: list[Chunk]) -> None:
@@ -165,6 +166,13 @@ def test_anthropic_judge_parses_structured_score(
     provider = _fake_anthropic(monkeypatch, messages)
     assert provider.faithfulness("Cursors are opaque [doc#h005].", toy_chunks) == 0.75
     assert messages.calls[0]["output_config"]["format"]["type"] == "json_schema"
+
+
+def test_anthropic_judge_refusal_scores_zero(
+    monkeypatch: pytest.MonkeyPatch, toy_chunks: list[Chunk]
+) -> None:
+    provider = _fake_anthropic(monkeypatch, _FakeMessages("", stop_reason="refusal"))
+    assert provider.faithfulness("Cursors are opaque [doc#h005].", toy_chunks) == 0.0
 
 
 def test_anthropic_refusal_stop_reason_becomes_not_in_docs(

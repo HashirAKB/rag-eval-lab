@@ -7,7 +7,7 @@ evaluated is exactly what is served.
 from dataclasses import dataclass
 
 from rag_eval_lab.chunking import STRATEGIES, Chunk, chunk_corpus
-from rag_eval_lab.corpus import Document, load_corpus
+from rag_eval_lab.corpus import load_corpus
 from rag_eval_lab.embedders import LsaEmbedder, MiniLmEmbedder
 from rag_eval_lab.retrievers import (
     Bm25Retriever,
@@ -18,22 +18,17 @@ from rag_eval_lab.retrievers import (
 )
 
 RETRIEVERS = ("bm25", "dense-lsa", "dense-minilm", "hybrid")
-NEURAL_RETRIEVERS = {"dense-minilm", "hybrid"}  # need the MiniLM model
 
 
 @dataclass(frozen=True)
 class Config:
-    chunking: str = "heading"
-    retriever: str = "hybrid"
+    chunking: str  # one of chunking.STRATEGIES
+    retriever: str  # one of RETRIEVERS
     rerank: bool = False
 
     @property
     def name(self) -> str:
         return f"{self.chunking}/{self.retriever}{'+rerank' if self.rerank else ''}"
-
-    @property
-    def needs_neural(self) -> bool:
-        return self.rerank or self.retriever in NEURAL_RETRIEVERS
 
     @classmethod
     def from_name(cls, name: str) -> "Config":
@@ -88,9 +83,7 @@ def build_retrievers(chunks: list[Chunk], configs: list[Config]) -> dict[Config,
     }
 
 
-def build_pipeline(
-    config: Config, docs: list[Document] | None = None
-) -> tuple[list[Chunk], Retriever]:
+def build_pipeline(config: Config) -> tuple[list[Chunk], Retriever]:
     """Chunks and retriever for one configuration (used by the API)."""
-    chunks = chunk_corpus(docs if docs is not None else load_corpus(), config.chunking)
+    chunks = chunk_corpus(load_corpus(), config.chunking)
     return chunks, build_retrievers(chunks, [config])[config]

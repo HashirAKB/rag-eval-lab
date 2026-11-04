@@ -76,7 +76,7 @@
 
   function renderAnswer(data) {
     // Turn [chunk_id] citations into links to the chunk cards below.
-    const linked = escapeHtml(data.answer).replace(/\[([^\[\]\s]+#[fh]\d{3})\]/g,
+    const linked = escapeHtml(data.answer).replace(/\[([^\[\]\s]+#[fh]\d{3,})\]/g,
       (_, id) => `<a class="cite" href="#${id}">[${id}]</a>`);
     $("answer").innerHTML = linked;
     $("answer").classList.toggle("refused", data.refused);

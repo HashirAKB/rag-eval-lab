@@ -5,7 +5,7 @@ Usage:
     python -m evals.run_eval --configs heading/bm25,heading/hybrid --output-dir /tmp/out
 
 Mock mode (no ANTHROPIC_API_KEY) is fully offline and deterministic apart from
-latency numbers. With a key, answers and the faithfulness judge use the live API.
+the average latency numbers. With a key, answers and the faithfulness judge use the live API.
 """
 
 import argparse
@@ -148,8 +148,11 @@ def run(configs: list[Config], provider: LLMProvider) -> dict[str, Any]:
             per_question = evaluate_config(
                 retrievers[config], evidence_by_id, gold, answerer, provider
             )
+            summary = summarize(per_question)
+            for row in per_question.values():
+                del row["latency_ms"]  # machine noise; keep only the average in the summary
             results["configs"][config.name] = {
-                "summary": summarize(per_question),
+                "summary": summary,
                 "refusal_sweep": threshold_sweep(per_question),
                 "avg_chunk_chars": round(mean(len(c.text) for c in chunks)),
                 "num_chunks": len(chunks),

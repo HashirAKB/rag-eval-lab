@@ -10,7 +10,7 @@ Success criteria for each milestone are in SPEC.md.
 - [x] M4 Gold set (60 questions, 10 unanswerable) + metrics
 - [x] M5 Eval harness, ablation table + analysis, regression gate in CI
 - [x] M6 FastAPI /ask, /search, HTML page; README, LEARNING, ADRs, SUMMARY
-- [ ] Final senior-reviewer pass
+- [x] Final senior-reviewer pass (round 1: dead code, prompt wording, judge refusal handling, citation regex, stable results.json)
 
 ## Blockers and decisions log
 

@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from anthropic.types.beta import BetaOutputConfigParam
 
 NOT_IN_DOCS = "NOT_IN_DOCS"
-CITATION = re.compile(r"\[([^\[\]\s]+#[fh]\d{3})\]")
+CITATION = re.compile(r"\[([^\[\]\s]+#[fh]\d{3,})\]")  # "[specification/server/tools#h007]"
 DEFAULT_MODEL = "claude-opus-5-5"
 
 
@@ -80,7 +80,7 @@ class MockProvider:
 
 
 ANSWER_SYSTEM = f"""You answer questions about the Model Context Protocol documentation.
-Use only the numbered context chunks you are given. After every sentence, cite the chunk
+Use only the context chunks you are given. After every sentence, cite the chunk
 ids that support it in square brackets, for example [specification/server/tools#h003].
 If the chunks do not contain the answer, reply with exactly {NOT_IN_DOCS} and nothing else.
 Answer in at most four sentences."""
@@ -141,7 +141,10 @@ class AnthropicProvider:
             "effort": "low",
             "format": {"type": "json_schema", "schema": JUDGE_SCHEMA},
         }
-        result = json.loads(self._complete(JUDGE_SYSTEM, prompt, output_config))
+        verdict = self._complete(JUDGE_SYSTEM, prompt, output_config)
+        if verdict == NOT_IN_DOCS:  # the judge itself was declined: count as unsupported
+            return 0.0
+        result = json.loads(verdict)
         return min(max(float(result["score"]), 0.0), 1.0)
 
 
