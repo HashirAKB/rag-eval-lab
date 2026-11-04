@@ -17,6 +17,6 @@ product (`matrix @ query_vector`). BM25 uses a small in-memory inverted index wr
 
 - Search is exact, so evaluation numbers are not blurred by approximate-search recall loss.
 - Search takes well under a millisecond per query at this size; no service to run or configure.
-- Indexes are rebuilt at startup (about 20 seconds for MiniLM on a laptop CPU). This stops scaling
-  somewhere in the hundreds of thousands of chunks; at that point an ANN index (FAISS, pgvector)
-  and persisted embeddings become worth their complexity.
+- BM25 and LSA are rebuilt at startup; MiniLM corpus embeddings are cached on disk by content
+  hash (25 s cold, about 1 s warm). This stops scaling somewhere in the hundreds of thousands of
+  chunks; at that point an ANN index (FAISS, pgvector) becomes worth its complexity.

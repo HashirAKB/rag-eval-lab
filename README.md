@@ -159,14 +159,16 @@ What the numbers say:
   faithfulness were never measured live; the live path is covered by unit tests with a fake client.
 - **MiniLM truncates** inputs at 256 word pieces, so the longest heading-aware chunks (up to 1500
   characters) are partly ignored by the dense retriever.
-- **CPU latency.** Reranking takes about 0.5 to 1 second per query; indexes are rebuilt at startup.
+- **CPU latency.** Reranking takes about 0.5 to 1 second per query. BM25 and LSA indexes are
+  rebuilt at startup; MiniLM corpus embeddings are cached on disk (`.cache/embeddings`).
 - The Docker image is built in CI; it could not be built locally because Docker Hub rate-limited
   the build machine.
 
 ## What I'd do next
 
-1. **Cache embeddings on disk** keyed by model and chunk text, so the API starts in seconds and
-   the ablation stops re-embedding unchanged chunks.
+1. ~~Cache embeddings on disk~~ **Done**: MiniLM corpus embeddings are saved under
+   `.cache/embeddings`, keyed by a hash of the model name and every chunk text. Startup of the
+   default config dropped from 25.0 s to 1.2 s on the build machine.
 2. **Contextual chunk headers**: prepend each chunk's heading path before indexing and measure it
    as a new ablation dimension.
 3. **Stemming in the tokenizer**, then re-measure BM25 recall and the refusal sweep, since both

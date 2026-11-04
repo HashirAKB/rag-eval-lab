@@ -25,6 +25,12 @@ jobs:
           path: ~/.cache/huggingface
           key: hf-${{ hashFiles('src/rag_eval_lab/models.py') }}
 
+      - name: Cache corpus embeddings
+        uses: actions/cache@v4
+        with:
+          path: .cache/embeddings
+          key: emb-${{ hashFiles('data/corpus/**', 'src/rag_eval_lab/corpus.py', 'src/rag_eval_lab/chunking.py') }}
+
       - name: Install
         run: |
           pip install torch --index-url https://download.pytorch.org/whl/cpu

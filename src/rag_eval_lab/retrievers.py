@@ -17,7 +17,7 @@ from typing import Protocol
 import numpy as np
 
 from rag_eval_lab.chunking import Chunk
-from rag_eval_lab.embedders import Embedder
+from rag_eval_lab.embedders import Embedder, cache_dir_from_env, embed_corpus
 from rag_eval_lab.models import load_reranker_model
 from rag_eval_lab.text import tokenize
 
@@ -87,7 +87,8 @@ class DenseRetriever:
         self.name = f"dense-{embedder.name}"
         texts = [c.text for c in chunks]
         embedder.fit(texts)
-        self.matrix = embedder.embed(texts)  # shape (n_chunks, dim), unit-length rows
+        # shape (n_chunks, dim), unit-length rows; loaded from disk when already computed
+        self.matrix = embed_corpus(embedder, texts, cache_dir_from_env())
 
     def search(self, query: str, k: int) -> list[Hit]:
         query_vector = self.embedder.embed([query])[0]
