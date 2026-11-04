@@ -9,7 +9,7 @@ Success criteria for each milestone are in SPEC.md.
 - [x] M3 LLM provider interface (Mock + Anthropic), grounded answering, refusal
 - [x] M4 Gold set (60 questions, 10 unanswerable) + metrics
 - [x] M5 Eval harness, ablation table + analysis, regression gate in CI
-- [ ] M6 FastAPI /ask, /search, HTML page; README, LEARNING, ADRs, SUMMARY
+- [x] M6 FastAPI /ask, /search, HTML page; README, LEARNING, ADRs, SUMMARY
 - [ ] Final senior-reviewer pass
 
 ## Blockers and decisions log

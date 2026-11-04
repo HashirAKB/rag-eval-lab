@@ -140,3 +140,9 @@ have no evidence and `answerable: false`.
 - "Recorded fixtures" are golden snapshots of `MockProvider` outputs used by
   tests. No live Anthropic recordings exist because no API key was available
   while building.
+- The Docker image could not be built inside the build sandbox: Docker Hub answered
+  `429 Too Many Requests` for `python:3.11-slim`. Per the project rules no alternative registry
+  was tried. Instead, CI has a `docker` job that builds the image and smoke-tests `/search`
+  inside the container on GitHub's runners.
+- M3's live provider is covered by unit tests with a fake client; no live API call was made
+  because no API key was available.

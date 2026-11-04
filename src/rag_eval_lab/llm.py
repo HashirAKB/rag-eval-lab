@@ -34,10 +34,17 @@ class LLMProvider(Protocol):
     def faithfulness(self, answer: str, contexts: list[Chunk]) -> float: ...
 
 
+_LINK_DEFINITION = re.compile(r"^\s*\[[^\]]+\]:\s")  # "[label]: /some/url" lines
+
+
 def _sentences(text: str) -> list[str]:
-    """Prose sentences of a chunk: code blocks, headings and table rows are skipped."""
+    """Prose sentences of a chunk: code, headings, tables and link definitions are skipped."""
     prose = re.sub(r"```.*?(```|$)", " ", text, flags=re.DOTALL)
-    lines = [ln for ln in prose.splitlines() if not ln.lstrip().startswith(("#", "|"))]
+    lines = [
+        ln
+        for ln in prose.splitlines()
+        if not ln.lstrip().startswith(("#", "|")) and not _LINK_DEFINITION.match(ln)
+    ]
     joined = re.sub(r"\s+", " ", " ".join(lines))
     return [s.strip() for s in re.split(r"(?<=[.!?])\s+", joined) if len(s.split()) >= 4]
 

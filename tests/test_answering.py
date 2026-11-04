@@ -43,6 +43,16 @@ def test_mock_provider_is_extractive_and_cites_its_sources(toy_chunks: list[Chun
     assert provider.answer("How does pagination use a cursor?", toy_chunks) == text
 
 
+def test_mock_provider_ignores_code_headings_and_link_definitions() -> None:
+    chunk = make_chunk(
+        0,
+        "## Cancel heading\n\n[cancel-ref]: /spec/cancel\n\n```\ncancel(request)\n```\n"
+        "Clients cancel a request by sending a notification.",
+    )
+    text = MockProvider().answer("how to cancel a request", [chunk])
+    assert text == "Clients cancel a request by sending a notification. [doc#h000]"
+
+
 def test_mock_provider_says_not_in_docs_without_overlap(toy_chunks: list[Chunk]) -> None:
     assert MockProvider().answer("kubernetes helm chart", toy_chunks) == NOT_IN_DOCS
 
