@@ -1,7 +1,7 @@
 """Build a complete RAG pipeline from a small configuration value.
 
-The eval harness and the API both go through `build_retrievers`, so what is
-evaluated is exactly what is served.
+The eval harness and the API both go through `build_retrievers` and `build_answerer`,
+so what is evaluated is exactly what is served.
 """
 
 from dataclasses import dataclass

@@ -115,9 +115,11 @@ confidence score (`answering.ConfidenceScorer`), and again after it if the LLM s
 | 11 | `src/rag_eval_lab/metrics.py` | recall@k, MRR, nDCG with multiple evidence quotes, bootstrap. |
 | 12 | `evals/run_eval.py`, `evals/results.md` | The ablation loop, paired comparisons, the written analysis. |
 | 13 | `evals/check_regression.py`, `.github/workflows/ci.yml` | Turning a metric into a CI gate. |
-| 14 | `src/rag_eval_lab/api.py`, `static/index.html` | Serving the same pipeline over HTTP. |
-| 15 | `tests/` | How each piece is pinned down, including the golden snapshot. |
-| 16 | `docs/adr/`, `DECISIONS.md` | The decisions and their trade-offs, in writing. |
+| 14 | `evals/compare.py`, `evals/experiments/*/README.md` | Running an experiment against a baseline and reporting it honestly, including the ones that did not work (stemming). |
+| 15 | `evals/holdout.jsonl`, `evals/holdout_eval.py`, `evals/refusal_signals.py` | Why in-sample numbers are optimistic; tuning on one set and checking on another. |
+| 16 | `src/rag_eval_lab/api.py`, `static/index.html` | Serving the same pipeline over HTTP. |
+| 17 | `tests/` | How each piece is pinned down, including the golden snapshot. |
+| 18 | `docs/adr/`, `DECISIONS.md` | The decisions and their trade-offs, in writing. |
 
 ## 3. One query traced end to end
 
@@ -126,8 +128,9 @@ with the default config `fixed/hybrid+rerank`.
 
 1. **Startup** (`api.create_app` lifespan, once): `pipeline.build_pipeline` loads the 37 documents
    (`corpus.load_corpus`), cuts 801 fixed-size chunks (`chunking.chunk_corpus`), and
-   `pipeline.build_retrievers` builds a BM25 index, a MiniLM embedding matrix (801 x 384), the
-   hybrid retriever over both, and wraps it in `RerankingRetriever`. `ConfidenceScorer` counts
+   `pipeline.build_retrievers` builds a BM25 index, a MiniLM embedding matrix (801 x 384, loaded
+   from `.cache/embeddings` when the same chunks were embedded before, see
+   `embedders.embed_corpus`), the hybrid retriever over both, and wraps it in `RerankingRetriever`. `ConfidenceScorer` counts
    document frequencies. `llm.get_provider` returns `MockProvider` because no key is set.
 2. **Route** (`api.ask`): pydantic validates the body (1 to 500 characters) and calls
    `Answerer.ask`.
@@ -234,11 +237,14 @@ answer the API would give.
     has no recall loss, so evaluation is not blurred by approximate search. I would add an ANN index
     and persisted embeddings at hundreds of thousands of chunks (ADR 0002).
 
-15. **What would you change first to improve the system?**
-    Measured candidates: contextual chunk headers (prepend the heading path before indexing),
-    stemming in the tokeniser (helps BM25 and the refusal score on paraphrases), multi-source
-    labels for the gold set, harder on-topic negatives, and a reranker depth sweep for latency.
-    Each is a config or a gold change, so the harness answers whether it helped.
+15. **What did you try after the first version, and what did you learn?**
+    Contextual chunk headers helped every fixed-size config (+2 to +10 points) but not heading-aware
+    chunks, which already start with their heading. Stemming gave small, noisy first-stage gains
+    and made refusals worse, so it was rejected and kept only as a patch. A reranker depth sweep
+    showed 20 candidates is the knee (89% recall@5; 40 costs twice the latency for no gain). A
+    held-out set showed refusal accuracy falling from 93% to 55% on hard negatives, which led to the
+    cross-encoder refusal gate (75% held-out). Each change went through the same harness, with
+    paired bootstrap intervals deciding what counts as an improvement.
 
 ## 5. Hands-on exercises
 

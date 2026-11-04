@@ -58,7 +58,7 @@ def _hit_out(hit: Hit) -> HitOut:
 
 
 def create_app(config: Config | None = None) -> FastAPI:
-    config = config or Config.from_name(os.environ.get("RAG_CONFIG", DEFAULT_CONFIG.name))
+    config = config or Config.from_name(os.environ.get("RAG_CONFIG") or DEFAULT_CONFIG.name)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -71,6 +71,7 @@ def create_app(config: Config | None = None) -> FastAPI:
         yield
 
     app = FastAPI(title="RAG Eval Lab", lifespan=lifespan)
+    app.state.config = config
 
     @app.get("/search", response_model=SearchResponse)
     def search(

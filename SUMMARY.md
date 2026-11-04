@@ -9,7 +9,8 @@
   BM25, dense LSA, dense MiniLM, hybrid with Reciprocal Rank Fusion) and an optional cross-encoder
   reranker: 16 configurations built through one function.
 - Grounded answering with inline `[chunk_id]` citations and a "not in the docs" refusal decided
-  from IDF-weighted query term coverage.
+  before generation from IDF-weighted word coverage and, for reranked configs, the cross-encoder's
+  top score.
 - An evaluation harness: a 60-question gold set (10 unanswerable) labelled with verbatim evidence
   quotes, metrics (recall@1/5/10, MRR, nDCG@10, citation accuracy, refusal accuracy,
   faithfulness), bootstrap confidence intervals, paired comparisons, a refusal threshold sweep,
@@ -19,6 +20,12 @@
 - A FastAPI service (`/ask`, `/search`) with a small HTML page that shows the answer, linked
   citations and the retrieved chunks with scores; a Dockerfile; CI running lint, mypy, tests,
   evals and a container smoke test.
+- Follow-up work, each measured with the same harness: an on-disk embedding cache (startup 25 s to
+  about 1 s), contextual chunk headers (helps fixed-size chunks, not promoted), light stemming
+  (rejected, kept as a patch), a reranker depth sweep (20 candidates is the knee), a 20-question
+  held-out set that exposed the refusal heuristic, a cross-encoder refusal gate (held-out refusal
+  accuracy 55% to 75%) and a label review queue for multi-source labels. Reports live in
+  `evals/experiments/`.
 - Documentation: README, LEARNING.md (study guide), five ADRs, DECISIONS.md, SPEC.md, PLAN.md.
 
 ## Mocked vs real
@@ -28,7 +35,7 @@
 | Corpus, cleaning, chunking | Real |
 | BM25, LSA, MiniLM embeddings, RRF, cross-encoder reranking | Real (local models, CPU) |
 | Retrieval metrics and the regression gate | Real, identical in mock and live mode |
-| Refusal decision | Real (computed before any LLM call) |
+| Refusal decision | Real (word coverage and cross-encoder score, computed before any LLM call) |
 | Answer generation | Mock by default: extractive, quotes the best-matching sentences with citations. Live Anthropic provider when `ANTHROPIC_API_KEY` is set |
 | Faithfulness | Mock: token-overlap heuristic (100% by construction for extractive answers). Live: LLM-as-judge with structured JSON output |
 | Live provider | Implemented and unit-tested with a fake client; never called against the real API (no key available) |
@@ -57,9 +64,13 @@
   on a 60-question gold set with recall@k, MRR, nDCG, citation and refusal accuracy, using paired
   bootstrap confidence intervals to separate real gains (reranking: +6 to +16 points recall@5)
   from noise.
-- Made retrieval quality a CI gate: GitHub Actions runs lint, mypy, 60+ tests and the full
+- Made retrieval quality a CI gate: GitHub Actions runs lint, mypy, 80 tests and the full
   ablation offline with a deterministic LLM mock, and fails the build if any configuration's
   recall@5 drops more than 3 points below the committed baseline.
 - Labelled the gold set with verbatim evidence quotes mapped to chunks through character offsets,
   so one gold file evaluates any chunking strategy fairly, and documented its biases and
   limitations alongside the results.
+- Showed that an in-sample metric was misleading: a held-out set of on-topic unanswerable
+  questions cut refusal accuracy from 93% to 55%; replacing pure word coverage with a
+  cross-encoder answerability gate (threshold chosen on the main set only) raised held-out
+  refusal accuracy to 75% without changing retrieval.

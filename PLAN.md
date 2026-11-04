@@ -12,6 +12,21 @@ Success criteria for each milestone are in SPEC.md.
 - [x] M6 FastAPI /ask, /search, HTML page; README, LEARNING, ADRs, SUMMARY
 - [x] Final senior-reviewer pass (round 1: dead code, prompt wording, judge refusal handling, citation regex, stable results.json)
 
+## After the Definition of Done ("What I'd do next" in README)
+
+- [x] Cache MiniLM corpus embeddings on disk (startup 25.0 s to 1.2 s); fixed Docker data paths
+- [x] Experiment: contextual chunk headers (helps fixed-size chunks; not promoted, borderline)
+- [x] Experiment: light stemming (rejected; kept as a patch)
+- [x] Experiment: reranker depth sweep (20 stays the default)
+- [x] Held-out set with on-topic unanswerable questions (exposed the refusal weakness)
+- [x] Cross-encoder refusal gate for reranked configs (held-out refusal 55% to 75%)
+- [~] Multi-source gold labels: review queue generated; accepting labels needs human annotators
+- [ ] Live-mode results: blocked, no API key available in the build environment
+- [x] Second reviewer pass over code and docs after the extra work
+
 ## Blockers and decisions log
 
-(none yet)
+- Docker Hub returned 429 for `python:3.11-slim` in the build sandbox: image is built and
+  smoke-tested in CI instead (SPEC.md, Deviations).
+- No API key: the live provider is unit-tested with a fake client only.
+- Decisions are logged in DECISIONS.md (D1 to D16).

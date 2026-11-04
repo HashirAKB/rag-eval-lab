@@ -64,6 +64,15 @@ def test_index_page_is_served(client: TestClient) -> None:
     assert 'fetch("/ask"' in response.text
 
 
+def test_empty_rag_config_falls_back_to_the_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    from rag_eval_lab.pipeline import DEFAULT_CONFIG
+
+    monkeypatch.setenv("RAG_CONFIG", "")
+    assert create_app().state.config == DEFAULT_CONFIG  # nothing is built until startup
+    monkeypatch.setenv("RAG_CONFIG", "heading/bm25")
+    assert create_app().state.config == Config("heading", "bm25")
+
+
 def test_config_from_name_round_trips() -> None:
     for name in ["heading/bm25", "fixed/hybrid+rerank", "heading/dense-minilm"]:
         assert Config.from_name(name).name == name
