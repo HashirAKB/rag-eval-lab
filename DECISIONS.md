@@ -59,3 +59,15 @@ Decisions made while building without the owner available. Format: decision, alt
 - Alternatives: gate only the served config.
 - Why: a change to shared code (tokenizer, chunker) can silently break a config that is not
   served today but is part of the published ablation.
+
+## D12. History rewrite to remove vendor names from commit messages
+- Alternatives: leave the M3 subject and one review-commit body as they were.
+- Why: the owner's rules forbid naming the assistant vendor in commit messages. The provider
+  class is named after the API it calls, and that name had leaked into two messages. Rewritten
+  with a non-interactive message filter; file contents were unchanged (empty tree diff).
+
+## D13. Contextual chunk headers measured but not promoted
+- Alternatives: make `fixed+ctx/hybrid+rerank` (93% recall@5) the served default and gate it.
+- Why: its gain over the current default is +4 points with a 95% interval of +0 to +10 on 50
+  questions, which is borderline. The fixed-chunk effect is consistent and mechanistically
+  plausible, so it is the first change to re-test on a larger gold set.

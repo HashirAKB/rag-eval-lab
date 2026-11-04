@@ -11,6 +11,7 @@ cosine is in [-1, 1], RRF scores are tiny. That is why fusion uses ranks, not sc
 
 import math
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -34,6 +35,14 @@ class Retriever(Protocol):
     def search(self, query: str, k: int) -> list[Hit]: ...
 
 
+def plain_text(chunk: Chunk) -> str:
+    return chunk.text
+
+
+# What a retriever indexes for each chunk; see chunking.contextual_text for the alternative.
+TextOf = Callable[[Chunk], str]
+
+
 def _top_k(chunks: list[Chunk], scores: np.ndarray, k: int) -> list[Hit]:
     # A stable sort on -score keeps ties in corpus order, so results are deterministic.
     order = np.argsort(-scores, kind="stable")[:k]
@@ -53,10 +62,12 @@ class Bm25Retriever:
 
     name = "bm25"
 
-    def __init__(self, chunks: list[Chunk], k1: float = 1.5, b: float = 0.75) -> None:
+    def __init__(
+        self, chunks: list[Chunk], k1: float = 1.5, b: float = 0.75, text_of: TextOf = plain_text
+    ) -> None:
         self.chunks = chunks
         self.k1, self.b = k1, b
-        token_lists = [tokenize(c.text) for c in chunks]
+        token_lists = [tokenize(text_of(c)) for c in chunks]
         self.doc_lengths = np.array([len(tokens) for tokens in token_lists], dtype=np.float64)
         self.avg_length = float(self.doc_lengths.mean())
         # Inverted index: term -> list of (chunk index, term frequency in that chunk).
@@ -81,11 +92,13 @@ class Bm25Retriever:
 
 
 class DenseRetriever:
-    def __init__(self, chunks: list[Chunk], embedder: Embedder) -> None:
+    def __init__(
+        self, chunks: list[Chunk], embedder: Embedder, text_of: TextOf = plain_text
+    ) -> None:
         self.chunks = chunks
         self.embedder = embedder
         self.name = f"dense-{embedder.name}"
-        texts = [c.text for c in chunks]
+        texts = [text_of(c) for c in chunks]
         embedder.fit(texts)
         # shape (n_chunks, dim), unit-length rows; loaded from disk when already computed
         self.matrix = embed_corpus(embedder, texts, cache_dir_from_env())
@@ -132,9 +145,10 @@ class RerankingRetriever:
     comparing two independent embeddings, but too slow to run over every chunk.
     """
 
-    def __init__(self, base: Retriever, depth: int = 20) -> None:
+    def __init__(self, base: Retriever, depth: int = 20, text_of: TextOf = plain_text) -> None:
         self.base = base
         self.depth = depth
+        self.text_of = text_of
         self.name = f"{base.name}+rerank"
 
     def search(self, query: str, k: int) -> list[Hit]:
@@ -142,5 +156,5 @@ class RerankingRetriever:
         if not candidates:
             return []
         model = load_reranker_model()
-        scores = np.asarray(model.predict([(query, h.chunk.text) for h in candidates]))
+        scores = np.asarray(model.predict([(query, self.text_of(h.chunk)) for h in candidates]))
         return _top_k([h.chunk for h in candidates], scores, k)

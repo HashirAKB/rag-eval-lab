@@ -169,8 +169,10 @@ What the numbers say:
 1. ~~Cache embeddings on disk~~ **Done**: MiniLM corpus embeddings are saved under
    `.cache/embeddings`, keyed by a hash of the model name and every chunk text. Startup of the
    default config dropped from 25.0 s to 1.2 s on the build machine.
-2. **Contextual chunk headers**: prepend each chunk's heading path before indexing and measure it
-   as a new ablation dimension.
+2. ~~Contextual chunk headers~~ **Measured**: indexing each chunk with its heading path prepended
+   lifts every fixed-size config (+2 to +10 points recall@5; `fixed+ctx/hybrid+rerank` reaches 93%)
+   and leaves heading-aware chunks unchanged. Not yet promoted because the gain for the served
+   config is borderline. Report: [`evals/experiments/contextual_headers`](evals/experiments/contextual_headers/README.md).
 3. **Stemming in the tokenizer**, then re-measure BM25 recall and the refusal sweep, since both
    depend on exact word matches.
 4. **Reranker depth sweep** (10, 20, 40 candidates) to chart recall@5 against latency.

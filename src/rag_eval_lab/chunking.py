@@ -140,6 +140,15 @@ def chunk_headings(
     return chunks
 
 
+def contextual_text(chunk: Chunk) -> str:
+    """The chunk prefixed with its heading path ("contextual chunk headers").
+
+    Used only for *indexing*: a fixed-size window from the middle of a section does not
+    contain the section title, but the title often holds the words a question uses.
+    """
+    return f"{' > '.join(chunk.heading_path)}\n\n{chunk.text}"
+
+
 STRATEGIES = ("fixed", "heading")
 
 

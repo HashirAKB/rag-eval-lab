@@ -28,7 +28,7 @@ from rag_eval_lab.metrics import (
     recall_at_k,
     reciprocal_rank,
 )
-from rag_eval_lab.pipeline import ALL_CONFIGS, Config, build_retrievers
+from rag_eval_lab.pipeline import ALL_CONFIGS, EXPERIMENT_CONFIGS, Config, build_retrievers
 from rag_eval_lab.retrievers import Retriever
 
 EVALS_DIR = Path(__file__).resolve().parent
@@ -269,7 +269,7 @@ def main() -> None:
     configs = ALL_CONFIGS
     if args.configs:
         wanted = set(args.configs.split(","))
-        configs = [c for c in ALL_CONFIGS if c.name in wanted]
+        configs = [c for c in ALL_CONFIGS + EXPERIMENT_CONFIGS if c.name in wanted]
         unknown = wanted - {c.name for c in configs}
         if unknown:
             parser.error(f"unknown configs: {sorted(unknown)}")
