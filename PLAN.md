@@ -7,7 +7,7 @@ Success criteria for each milestone are in SPEC.md.
 - [x] M1 Corpus snapshot + MDX cleaning + fixed-size and heading-aware chunkers
 - [x] M2 Retrievers: BM25, dense (LSA + MiniLM), hybrid RRF, cross-encoder reranker
 - [x] M3 LLM provider interface (Mock + Anthropic), grounded answering, refusal
-- [ ] M4 Gold set (60 questions, 10 unanswerable) + metrics
+- [x] M4 Gold set (60 questions, 10 unanswerable) + metrics
 - [ ] M5 Eval harness, ablation table + analysis, regression gate in CI
 - [ ] M6 FastAPI /ask, /search, HTML page; README, LEARNING, ADRs, SUMMARY
 - [ ] Final senior-reviewer pass
