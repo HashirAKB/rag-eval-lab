@@ -188,8 +188,9 @@ answer the API would give.
 
 7. **How is the refusal decision made, and what are its failure modes?**
    `ConfidenceScorer`: the IDF-weighted share of question words present in the best of the top 5
-   chunks, thresholded at 0.35. It fails on paraphrases (no stemming, so false refusals) and on
-   on-topic unanswerable questions that use only corpus vocabulary (missed refusals: 4 of 10).
+   chunks, thresholded at 0.35. It fails on paraphrases (no stemming, so false refusals) and,
+   badly, on on-topic unanswerable questions that use only corpus vocabulary: on the held-out set
+   it misses 8 of 10 (`evals/experiments/holdout`). It measures topicality, not answerability.
 
 8. **Why decide refusal before calling the LLM?**
    It is retriever-independent, testable offline, identical in mock and live mode, and saves a

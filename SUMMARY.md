@@ -39,8 +39,9 @@
 - The gold set was written by the builder from the documents (lexical bias), is small (one
   question is 2 points of recall) and has one labelled source per question, so recall is a lower
   bound. No human domain expert reviewed it.
-- The refusal threshold (0.35) was tuned on the evaluation set; the heuristic still answers 4 of
-  10 unanswerable questions that use only in-corpus vocabulary.
+- The refusal threshold (0.35) was tuned on the evaluation set (93% refusal accuracy there). On a
+  held-out set of on-topic unanswerable questions it misses 8 of 10 (55%): the heuristic measures
+  topicality, not answerability.
 - No live-mode numbers exist for answer quality or faithfulness.
 - The Docker image was not built locally (Docker Hub rate limit); CI builds and smoke-tests it.
 - Embeddings are recomputed at every startup; reranking costs about 0.5 to 1 second per query on

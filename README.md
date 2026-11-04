@@ -153,8 +153,10 @@ What the numbers say:
   [`evals/GOLD.md`](evals/GOLD.md).
 - **Single-source labels.** When another page also answers a question, a correct retrieval counts
   as a miss (2 of the winner's 6 misses are this).
-- **The refusal threshold was tuned on the eval set**, and the confidence heuristic misses 4 of 10
-  unanswerable questions that use only in-corpus vocabulary.
+- **Refusal does not generalise to hard negatives.** The threshold was tuned on the eval set (93%
+  refusal accuracy there). On a held-out set of on-topic unanswerable questions it misses 8 of 10
+  (55% refusal accuracy): word coverage measures topicality, not answerability. See
+  [`evals/experiments/holdout`](evals/experiments/holdout/README.md).
 - **No live-mode results.** No API key was available while building, so answer quality and LLM-judge
   faithfulness were never measured live; the live path is covered by unit tests with a fake client.
 - **MiniLM truncates** inputs at 256 word pieces, so the longest heading-aware chunks (up to 1500
@@ -179,6 +181,11 @@ What the numbers say:
 4. ~~Reranker depth sweep~~ **Measured**: recall@5 is 75 / 83 / 89 / 87 when reranking 5 / 10 /
    20 / 40 candidates, at about 150 / 260 / 535 / 1071 ms per query. 20 stays the default; 10 is
    the latency-friendly option. Report: [`evals/experiments/rerank_depth`](evals/experiments/rerank_depth/README.md).
-5. **Harder unanswerable questions** that use only in-corpus vocabulary, to stress the refusal policy.
-6. **Multi-source gold labels** reviewed by a second annotator, and live-mode results with an
+5. ~~Harder unanswerable questions~~ **Done as a held-out set** (`evals/holdout.jsonl`, 10
+   answerable + 10 on-topic unanswerable, never used for tuning). Result: refusal accuracy drops
+   from 93% to 55% for the served config, which exposes the main weakness of the refusal heuristic.
+   Report: [`evals/experiments/holdout`](evals/experiments/holdout/README.md).
+6. **An answerability signal that reads the passage**, such as the cross-encoder's top score, to
+   replace or complement word coverage for refusals, measured on the held-out set.
+7. **Multi-source gold labels** reviewed by a second annotator, and live-mode results with an
    API key (answers plus LLM-judge faithfulness).

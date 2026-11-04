@@ -124,10 +124,12 @@ def threshold_sweep(per_question: dict[str, dict[str, Any]]) -> list[dict[str, f
     return sweep
 
 
-def run(configs: list[Config], provider: LLMProvider) -> dict[str, Any]:
+def run(
+    configs: list[Config], provider: LLMProvider, gold: list[GoldItem] | None = None
+) -> dict[str, Any]:
     docs = load_corpus()
     docs_by_path = {d.path: d for d in docs}
-    gold = load_gold()
+    gold = gold if gold is not None else load_gold()
     results: dict[str, Any] = {
         "mode": provider.name,
         "faithfulness_method": provider.faithfulness_method,
