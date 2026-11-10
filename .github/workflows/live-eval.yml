@@ -1,0 +1,107 @@
+name: live-eval
+
+# Runs the evaluation with live Anthropic answers and an LLM faithfulness judge,
+# writing evals/live/results.{json,md} (the committed mock results are untouched).
+# Manual only, because every run costs money. Needs the ANTHROPIC_API_KEY
+# repository secret.
+#
+# Retrieval metrics (recall, MRR, nDCG) do not depend on the model, so they match
+# mock mode; only citation accuracy, refusals after generation and faithfulness
+# change. That is why the default is the served config alone. "all" runs all 16
+# configs at about 16 times the cost.
+on:
+  workflow_dispatch:
+    inputs:
+      configs:
+        description: Comma-separated config names, or "all"
+        required: true
+        default: fixed/hybrid+rerank
+      model:
+        description: Model id
+        required: true
+        default: claude-opus-5-5
+      commit_results:
+        description: Commit evals/live/ back to main
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: live-eval
+  cancel-in-progress: false
+
+jobs:
+  live-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_MODEL: ${{ inputs.model }}
+      CONFIGS: ${{ inputs.configs }}
+    steps:
+      - name: Check the API key secret
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Add an ANTHROPIC_API_KEY repository secret first (Settings > Secrets and variables > Actions)."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-${{ hashFiles('src/rag_eval_lab/models.py') }}
+
+      - name: Cache corpus embeddings
+        uses: actions/cache@v4
+        with:
+          path: .cache/embeddings
+          key: emb-${{ hashFiles('data/corpus/**', 'src/rag_eval_lab/corpus.py', 'src/rag_eval_lab/chunking.py') }}
+
+      - name: Install
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install -e ".[dev,neural,live]"
+
+      - name: Run the evaluation against the live model
+        run: |
+          args=(--output-dir evals/live)
+          if [ "$CONFIGS" != "all" ]; then args+=(--configs "$CONFIGS"); fi
+          python -m evals.run_eval "${args[@]}"
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f evals/live/results.md ]; then
+            cat evals/live/results.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-eval-results
+          path: evals/live/
+          if-no-files-found: ignore
+
+      - name: Commit results
+        if: inputs.commit_results
+        run: |
+          git config user.name "Hashir Ahmed K B"
+          git config user.email "20386725+HashirAKB@users.noreply.github.com"
+          git add evals/live
+          if git diff --cached --quiet; then
+            echo "No result changes to commit."
+            exit 0
+          fi
+          git commit -m "Live eval results ($ANTHROPIC_MODEL, $CONFIGS)"
+          git pull --rebase
+          git push
